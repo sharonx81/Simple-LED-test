@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Color Toggle</title>
+<style>
+:root { --bg:#ffffff; --btn:#222222; --btn-text:#ffffff; color-scheme: light; box-sizing:border-box;
+  padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#111111; --btn:#f2f2f2; --btn-text:#111111; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg:#111111; --btn:#f2f2f2; --btn-text:#111111; color-scheme: dark; }
+html, body { height:100%; margin:0; }
+body { background:var(--bg); display:flex; align-items:center; justify-content:center; transition:background .25s; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+body.green { background:#00c853; }
+body.red { background:#e53935; }
+button { font:600 1.25rem inherit; font-family:inherit; padding:1rem 2.5rem; border:0; border-radius:999px; background:var(--btn); color:var(--btn-text); }
+button:active { transform:scale(.96); }
+</style>
+</head>
+<body>
+<button id="b">Press me</button>
+<script>
+var green = false, b = document.getElementById("b");
+b.addEventListener("click", function () {
+  green = !green;
+  document.body.className = green ? "green" : "red";
+});
+</script>
+</body>
+</html>
