@@ -1,0 +1,114 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Generate Android project
+        run: |
+          mkdir -p app/src/main/java/com/example/colortoggle
+          cat > settings.gradle.kts <<'EOT'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "ColorToggle"
+          include(":app")
+          EOT
+          cat > build.gradle.kts <<'EOT'
+          plugins {
+              id("com.android.application") version "8.5.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+          }
+          EOT
+          cat > gradle.properties <<'EOT'
+          android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx2g
+          EOT
+          cat > app/build.gradle.kts <<'EOT'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+          android {
+              namespace = "com.example.colortoggle"
+              compileSdk = 34
+              defaultConfig {
+                  applicationId = "com.example.colortoggle"
+                  minSdk = 24
+                  targetSdk = 34
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+          dependencies {
+              implementation("androidx.appcompat:appcompat:1.6.1")
+          }
+          EOT
+          cat > app/src/main/AndroidManifest.xml <<'EOT'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="Color Toggle"
+                  android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOT
+          cat > app/src/main/java/com/example/colortoggle/MainActivity.kt <<'EOT'
+          package com.example.colortoggle
+
+          import android.graphics.Color
+          import android.os.Bundle
+          import android.view.Gravity
+          import android.widget.Button
+          import android.widget.LinearLayout
+          import androidx.appcompat.app.AppCompatActivity
+
+          class MainActivity : AppCompatActivity() {
+              private var isGreen = false
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  val root = LinearLayout(this).apply {
+                      gravity = Gravity.CENTER
+                      setBackgroundColor(Color.WHITE)
+                  }
+                  val button = Button(this).apply { text = "Press me" }
+                  button.setOnClickListener {
+                      isGreen = !isGreen
+                      root.setBackgroundColor(if (isGreen) Color.GREEN else Color.RED)
+                  }
+                  root.addView(button)
+                  setContentView(root)
+              }
+          }
+          EOT
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ColorToggle-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
